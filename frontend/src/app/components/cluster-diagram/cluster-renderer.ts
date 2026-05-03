@@ -91,6 +91,8 @@ interface GridGeometry {
   cellW: number;
   totalCols: number;
   totalRows: number;
+  virtualTopY: number;
+  virtualBottomY: number;
   dim: RenderDimensions;
 }
 
@@ -141,10 +143,26 @@ export function renderLayout(layout: GridLayout, params: RenderParams): RenderRe
     }
   }
 
-  const rowTopY: number[] = [dim.marginY];
+  let needsVirtualTop = false;
+  let needsVirtualBottom = false;
+  for (const e of layout.edges) {
+    for (const wp of e.waypoints) {
+      if (wp.row < 0) { needsVirtualTop = true; }
+      if (wp.row >= layout.rows) { needsVirtualBottom = true; }
+    }
+  }
+  const virtualGap = dim.laneSpacing * 3;
+  const topPad = needsVirtualTop ? virtualGap : 0;
+  const bottomPad = needsVirtualBottom ? virtualGap : 0;
+
+  const rowTopY: number[] = [dim.marginY + topPad];
   for (let r = 1; r < layout.rows; r++) {
     rowTopY.push(rowTopY[r - 1] + rowHeights[r - 1]);
   }
+  const virtualTopY = needsVirtualTop ? dim.marginY + topPad / 2 : dim.marginY;
+  const virtualBottomY = layout.rows > 0
+    ? rowTopY[layout.rows - 1] + rowHeights[layout.rows - 1] + bottomPad / 2
+    : dim.marginY;
 
   const gutterWidths: number[] = [];
   for (let c = 0; c < layout.cols - 1; c++) {
@@ -174,6 +192,7 @@ export function renderLayout(layout: GridLayout, params: RenderParams): RenderRe
   const geo: GridGeometry = {
     colLeftX, rowTopY, rowHeights, gutterWidths, cellW,
     totalCols: layout.cols, totalRows: layout.rows,
+    virtualTopY, virtualBottomY,
     dim,
   };
 
@@ -182,7 +201,7 @@ export function renderLayout(layout: GridLayout, params: RenderParams): RenderRe
   const chunkOutlines = params.preview ? [] : renderChunkOutlines(layout.chunks, params, geo);
 
   const fullWidth = dim.marginX * 2 + layout.cols * cellW + totalGutterW;
-  const fullHeight = rowTopY[layout.rows - 1] + rowHeights[layout.rows - 1] + dim.marginY;
+  const fullHeight = rowTopY[layout.rows - 1] + rowHeights[layout.rows - 1] + bottomPad + dim.marginY;
 
   if (params.preview) {
     const selected = nodes.find(n => n.isCurrent && n.visible) ?? nodes.find(n => n.visible);
@@ -241,7 +260,8 @@ function geoCellX(geo: GridGeometry, col: number): number {
 }
 
 function geoCellY(geo: GridGeometry, row: number): number {
-  if (row < 0 || row >= geo.totalRows) { return geo.dim.marginY; }
+  if (row < 0) { return geo.virtualTopY; }
+  if (row >= geo.totalRows) { return geo.virtualBottomY; }
   return geo.rowTopY[row] + geo.rowHeights[row] / 2;
 }
 
@@ -254,7 +274,8 @@ function geoCellLeft(geo: GridGeometry, col: number): number {
 }
 
 function geoCellTop(geo: GridGeometry, row: number): number {
-  if (row < 0 || row >= geo.totalRows) { return geo.dim.marginY; }
+  if (row < 0) { return geo.virtualTopY; }
+  if (row >= geo.totalRows) { return geo.virtualBottomY; }
   return geo.rowTopY[row];
 }
 
@@ -263,19 +284,24 @@ function geoCellRight(geo: GridGeometry, col: number): number {
 }
 
 function geoCellBottom(geo: GridGeometry, row: number): number {
-  if (row < 0 || row >= geo.totalRows) { return geo.dim.marginY; }
+  if (row < 0) { return geo.virtualTopY; }
+  if (row >= geo.totalRows) { return geo.virtualBottomY; }
   return geo.rowTopY[row] + geo.rowHeights[row];
 }
 
-function borderX(geo: GridGeometry, b: number): number {
+function borderX(geo: GridGeometry, b: number, side: 'left' | 'right' | null = null): number {
   if (b <= 0) { return geoCellLeft(geo, 0) - OUTLINE_PAD; }
   if (b >= geo.totalCols) { return geoCellRight(geo, geo.totalCols - 1) + OUTLINE_PAD; }
+  if (side === 'left') { return geoCellLeft(geo, b) - geo.dim.laneSpacing / 2; }
+  if (side === 'right') { return geoCellRight(geo, b - 1) + geo.dim.laneSpacing / 2; }
   return (geoCellRight(geo, b - 1) + geoCellLeft(geo, b)) / 2;
 }
 
-function borderY(geo: GridGeometry, b: number): number {
+function borderY(geo: GridGeometry, b: number, side: 'top' | 'bottom' | null = null): number {
   if (b <= 0) { return geoCellTop(geo, 0) - OUTLINE_PAD; }
   if (b >= geo.totalRows) { return geoCellBottom(geo, geo.totalRows - 1) + OUTLINE_PAD; }
+  if (side === 'top') { return geoCellTop(geo, b) + geo.dim.laneSpacing / 2; }
+  if (side === 'bottom') { return geoCellBottom(geo, b - 1) - geo.dim.laneSpacing / 2; }
   return (geoCellBottom(geo, b - 1) + geoCellTop(geo, b)) / 2;
 }
 
@@ -554,7 +580,7 @@ function renderChunkOutlines(
       const ty = borderY(geo, r);
       if (ty < labelY || (ty === labelY && cx < labelX)) {
         labelX = cx;
-        labelY = ty - 4;
+        labelY = ty - 8;
       }
     }
 
@@ -578,10 +604,16 @@ function collectBoundarySegments(chunk: ChunkRegion, geo: GridGeometry): Segment
 
   for (const cell of chunk.cells) {
     const c = cellCol(cell), r = cellRow(cell);
-    const left = borderX(geo, c);
-    const right = borderX(geo, c + 1);
-    const top = borderY(geo, r);
-    const bottom = borderY(geo, r + 1);
+    const left = cornerX(chunk, geo, c, r);
+    const right = cornerX(chunk, geo, c + 1, r);
+    const bottomLeft = cornerX(chunk, geo, c, r + 1);
+    const bottomRight = cornerX(chunk, geo, c + 1, r + 1);
+    const top = borderY(geo, r, 'top');
+    const bottom = borderY(geo, r + 1, 'bottom');
+    const leftTop = cornerY(chunk, geo, c, r);
+    const leftBottom = cornerY(chunk, geo, c, r + 1);
+    const rightTop = cornerY(chunk, geo, c + 1, r);
+    const rightBottom = cornerY(chunk, geo, c + 1, r + 1);
 
     const hasAbove = chunk.cells.has(cellKey(c, r - 1));
     const hasBelow = chunk.cells.has(cellKey(c, r + 1));
@@ -589,12 +621,52 @@ function collectBoundarySegments(chunk: ChunkRegion, geo: GridGeometry): Segment
     const hasRight = chunk.cells.has(cellKey(c + 1, r));
 
     if (!hasAbove) { segments.push({ x1: left, y1: top, x2: right, y2: top }); }
-    if (!hasBelow) { segments.push({ x1: right, y1: bottom, x2: left, y2: bottom }); }
-    if (!hasLeft) { segments.push({ x1: left, y1: bottom, x2: left, y2: top }); }
-    if (!hasRight) { segments.push({ x1: right, y1: top, x2: right, y2: bottom }); }
+    if (!hasBelow) { segments.push({ x1: bottomRight, y1: bottom, x2: bottomLeft, y2: bottom }); }
+    if (!hasLeft) {
+      const x = borderX(geo, c, 'left');
+      segments.push({ x1: x, y1: leftBottom, x2: x, y2: leftTop });
+    }
+    if (!hasRight) {
+      const x = borderX(geo, c + 1, 'right');
+      segments.push({ x1: x, y1: rightTop, x2: x, y2: rightBottom });
+    }
   }
 
   return segments;
+}
+
+function cornerX(chunk: ChunkRegion, geo: GridGeometry, col: number, row: number): number {
+  const side = verticalBoundarySide(
+    chunk.cells.has(cellKey(col - 1, row)),
+    chunk.cells.has(cellKey(col, row)),
+  ) || verticalBoundarySide(
+    chunk.cells.has(cellKey(col - 1, row - 1)),
+    chunk.cells.has(cellKey(col, row - 1)),
+  );
+  return borderX(geo, col, side);
+}
+
+function verticalBoundarySide(leftOccupied: boolean, rightOccupied: boolean): 'left' | 'right' | null {
+  if (!leftOccupied && rightOccupied) { return 'left'; }
+  if (leftOccupied && !rightOccupied) { return 'right'; }
+  return null;
+}
+
+function cornerY(chunk: ChunkRegion, geo: GridGeometry, col: number, row: number): number {
+  const side = horizontalBoundarySide(
+    chunk.cells.has(cellKey(col, row - 1)),
+    chunk.cells.has(cellKey(col, row)),
+  ) || horizontalBoundarySide(
+    chunk.cells.has(cellKey(col - 1, row - 1)),
+    chunk.cells.has(cellKey(col - 1, row)),
+  );
+  return borderY(geo, row, side);
+}
+
+function horizontalBoundarySide(aboveOccupied: boolean, belowOccupied: boolean): 'top' | 'bottom' | null {
+  if (!aboveOccupied && belowOccupied) { return 'top'; }
+  if (aboveOccupied && !belowOccupied) { return 'bottom'; }
+  return null;
 }
 
 function endpointKey(x: number, y: number): string {
