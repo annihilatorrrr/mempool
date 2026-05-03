@@ -1,5 +1,5 @@
-<div class="graph-container" #graphContainer>
-  <svg [attr.width]="svgWidth" [attr.height]="svgHeight" xmlns="http://www.w3.org/2000/svg">
+<div class="graph-container" [class.preview]="preview" #graphContainer>
+  <svg [attr.width]="svgWidth" [attr.height]="svgHeight" [attr.viewBox]="svgViewBox" xmlns="http://www.w3.org/2000/svg">
     <defs>
       <linearGradient *ngFor="let edge of edges; trackBy: trackByEdgeId"
         [attr.id]="edge.gradientId"
@@ -28,56 +28,62 @@
       </marker>
     </defs>
 
-    <path *ngFor="let outline of chunkOutlines; trackBy: trackByChunkIndex"
-      class="chunk-border"
-      [class.inactive]="outline.chunkIndex !== activeChunkIndex"
-      [attr.d]="outline.path" />
+    <ng-container *ngIf="!preview">
+      <path *ngFor="let outline of chunkOutlines; trackBy: trackByChunkIndex"
+        class="chunk-border"
+        [class.inactive]="outline.chunkIndex !== activeChunkIndex"
+        [attr.d]="outline.path" />
 
-    <text *ngFor="let outline of chunkOutlines; trackBy: trackByChunkIndex"
-      class="chunk-label"
-      [class.inactive]="outline.chunkIndex !== activeChunkIndex"
-      [attr.x]="outline.labelX" [attr.y]="outline.labelY"
-      text-anchor="middle">
-      {{ outline.feerate | feeRounding }} sat/vB
-    </text>
-
-    <g *ngFor="let edge of edges; let i = index; trackBy: trackByEdgeId">
-      <path class="edge-hitarea"
-        [attr.d]="edge.path"
-        fill="none"
-        stroke="transparent"
-        stroke-width="12"
-        (mouseenter)="onEdgeEnter(i)"
-        (mouseleave)="onEdgeLeave()" />
-      <path class="edge-line"
-        [class.highlighted]="edge.highlighted"
-        [attr.d]="edge.path"
-        [attr.stroke]="edge.highlighted ? 'white' : 'url(#' + edge.gradientId + ')'"
-        [attr.marker-end]="edge.highlighted ? 'url(#edge-arrow-highlight)' : 'url(#' + edge.markerId + ')'"
-        fill="none" />
-    </g>
-
-    <g *ngFor="let node of nodes; trackBy: trackByNodeIndex"
-      class="node-group"
-      [class.inactive-fill]="node.inactive"
-      (mouseenter)="onNodeEnter(node, $event)"
-      (mousemove)="onNodeMove($event)"
-      (mouseleave)="onNodeLeave()"
-      (click)="onNodeClick(node)">
-      <rect class="node-rect"
-        [class.current]="node.isCurrent"
-        [class.hovered]="node.hovered"
-        [class.related]="node.related"
-        [attr.x]="node.rectX" [attr.y]="node.rectY"
-        [attr.width]="nodeW" [attr.height]="nodeH"
-        [attr.rx]="nodeRx"
-        [attr.fill]="node.color" />
-      <text class="node-label"
-        [attr.x]="node.x" [attr.y]="node.y"
-        text-anchor="middle" dominant-baseline="central">
-        {{ node.feerate | feeRounding }}
+      <text *ngFor="let outline of chunkOutlines; trackBy: trackByChunkIndex"
+        class="chunk-label"
+        [class.inactive]="outline.chunkIndex !== activeChunkIndex"
+        [attr.x]="outline.labelX" [attr.y]="outline.labelY"
+        text-anchor="middle">
+        {{ outline.feerate | feeRounding }} sat/vB
       </text>
-    </g>
+    </ng-container>
+
+    <ng-container *ngFor="let edge of edges; let i = index; trackBy: trackByEdgeId">
+      <g *ngIf="edge.visible">
+        <path class="edge-hitarea"
+          [attr.d]="edge.path"
+          fill="none"
+          stroke="transparent"
+          stroke-width="12"
+          (mouseenter)="onEdgeEnter(i)"
+          (mouseleave)="onEdgeLeave()" />
+        <path class="edge-line"
+          [class.highlighted]="edge.highlighted"
+          [attr.d]="edge.path"
+          [attr.stroke]="preview ? 'white' : (edge.highlighted ? 'white' : 'url(#' + edge.gradientId + ')')"
+          [attr.marker-end]="preview ? null : (edge.highlighted ? 'url(#edge-arrow-highlight)' : 'url(#' + edge.markerId + ')')"
+          fill="none" />
+      </g>
+    </ng-container>
+
+    <ng-container *ngFor="let node of nodes; trackBy: trackByNodeIndex">
+      <g *ngIf="node.visible"
+        class="node-group"
+        [class.inactive-fill]="node.inactive"
+        (mouseenter)="onNodeEnter(node, $event)"
+        (mousemove)="onNodeMove($event)"
+        (mouseleave)="onNodeLeave()"
+        (click)="onNodeClick(node)">
+        <rect class="node-rect"
+          [class.current]="node.isCurrent"
+          [class.hovered]="node.hovered"
+          [class.related]="node.related"
+          [attr.x]="node.rectX" [attr.y]="node.rectY"
+          [attr.width]="node.width" [attr.height]="node.height"
+          [attr.rx]="node.rx"
+          [attr.fill]="node.color" />
+        <text *ngIf="!preview" class="node-label"
+          [attr.x]="node.x" [attr.y]="node.y"
+          text-anchor="middle" dominant-baseline="central">
+          {{ node.feerate | feeRounding }}
+        </text>
+      </g>
+    </ng-container>
   </svg>
 
   <div #tooltip

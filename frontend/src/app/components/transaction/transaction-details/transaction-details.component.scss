@@ -164,3 +164,30 @@
   opacity: 0.5;
   pointer-events: none;
 }
+
+.effective-fee-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+
+  .effective-fee-container {
+    flex: 0 0 auto;
+  }
+}
+
+.cluster-preview-inline {
+  position: relative;
+  flex: 1 1 80px;
+  min-width: 80px;
+  max-width: 100%;
+  display: flex;
+  align-items: center;
+  overflow: visible;
+  margin: -0.75rem -0.75rem -0.75rem 0;
+
+  app-cluster-diagram {
+    display: block;
+    width: 100%;
+  }
+}

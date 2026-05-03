@@ -252,24 +252,26 @@
           <td i18n="transaction.effective-fee-rate|Effective transaction fee rate">Effective fee rate</td>
         }
         <td>
-          <div class="effective-fee-container">
-            @if (accelerationInfo?.acceleratedFeeRate && (!tx.effectiveFeePerVsize || accelerationInfo.acceleratedFeeRate >= tx.effectiveFeePerVsize || tx.acceleration)) {
-              <app-fee-rate [class.oobFees]="isAcceleration" [fee]="accelerationInfo.acceleratedFeeRate"></app-fee-rate>
-            } @else {
-              <app-fee-rate [class.oobFees]="isAcceleration" [fee]="tx.effectiveFeePerVsize"></app-fee-rate>
-            }
+          <div class="effective-fee-row">
+            <div class="effective-fee-container">
+              @if (accelerationInfo?.acceleratedFeeRate && (!tx.effectiveFeePerVsize || accelerationInfo.acceleratedFeeRate >= tx.effectiveFeePerVsize || tx.acceleration)) {
+                <app-fee-rate [class.oobFees]="isAcceleration" [fee]="accelerationInfo.acceleratedFeeRate"></app-fee-rate>
+              } @else {
+                <app-fee-rate [class.oobFees]="isAcceleration" [fee]="tx.effectiveFeePerVsize"></app-fee-rate>
+              }
 
-            @if (tx?.status?.confirmed && !tx.acceleration && !accelerationInfo && tx.fee && tx.effectiveFeePerVsize) {
-              <app-tx-fee-rating class="ms-2 me-2 effective-fee-rating" [tx]="tx"></app-tx-fee-rating>
+              @if (tx?.status?.confirmed && !tx.acceleration && !accelerationInfo && tx.fee && tx.effectiveFeePerVsize) {
+                <app-tx-fee-rating class="ms-2 me-2 effective-fee-rating" [tx]="tx"></app-tx-fee-rating>
+              }
+            </div>
+            @if (cpfpInfo?.cluster && tx?.txid) {
+              <div class="cluster-preview-inline">
+                <app-cluster-diagram [cluster]="cpfpInfo.cluster" [txid]="tx.txid" [preview]="true"></app-cluster-diagram>
+              </div>
+            } @else if (hasCpfp) {
+              <button type="button" class="btn btn-outline-info btn-sm btn-small-height" (click)="toggleCpfp()">CPFP</button>
             }
           </div>
-          @if (hasCpfp) {
-            @if (cpfpInfo?.cluster) {
-              <button type="button" class="btn btn-outline-info btn-sm btn-small-height float-end" (click)="toggleCpfp()" i18n="transaction.cluster|Cluster">Cluster</button>
-            } @else {
-              <button type="button" class="btn btn-outline-info btn-sm btn-small-height float-end" (click)="toggleCpfp()">CPFP</button>
-            }
-          }
         </td>
       </tr>
     }

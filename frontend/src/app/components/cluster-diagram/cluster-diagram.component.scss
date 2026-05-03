@@ -9,6 +9,35 @@
   svg {
     display: inline-block;
   }
+
+  &.preview {
+    padding: 0;
+    overflow: hidden;
+    pointer-events: none;
+    border-radius: 4px;
+
+    svg {
+      display: block;
+      width: 100%;
+      -webkit-mask:
+        linear-gradient(to right, transparent 0, #000 6%, #000 94%, transparent 100%),
+        linear-gradient(to bottom, transparent 0, #000 12%, #000 88%, transparent 100%);
+      -webkit-mask-composite: source-in;
+      mask:
+        linear-gradient(to right, transparent 0, #000 6%, #000 94%, transparent 100%),
+        linear-gradient(to bottom, transparent 0, #000 12%, #000 88%, transparent 100%);
+      mask-composite: intersect;
+    }
+
+    .node-rect {
+      stroke-width: 2;
+    }
+
+    .edge-line {
+      stroke-width: 0.5;
+      opacity: 0.55;
+    }
+  }
 }
 
 .chunk-border {
