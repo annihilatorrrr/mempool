@@ -1,5 +1,7 @@
 import { GridLayout, GridNode, GridEdge, ChunkRegion, cellKey, cellCol, cellRow } from './cluster-layout';
 
+export type RelatedKind = null | 'ancestor' | 'descendant' | 'direct';
+
 export interface RenderedNode {
   index: number;
   tx: { txid: string; fee: number; weight: number };
@@ -16,7 +18,7 @@ export interface RenderedNode {
   inactive: boolean;
   isCurrent: boolean;
   hovered: boolean;
-  related: boolean;
+  relation: RelatedKind;
   visible: boolean;
 }
 
@@ -35,6 +37,7 @@ export interface RenderedEdge {
   x2: number;
   y2: number;
   highlighted: boolean;
+  highlightKind: RelatedKind;
   visible: boolean;
 }
 
@@ -304,7 +307,7 @@ function renderNodes(gridNodes: GridNode[], params: RenderParams, geo: GridGeome
       inactive,
       isCurrent: params.txids[gn.index] === params.currentTxid,
       hovered: false,
-      related: false,
+      relation: null,
       visible,
     };
   });
@@ -406,6 +409,7 @@ function renderEdges(
       x1: first.x, y1: first.y,
       x2: last.x, y2: last.y,
       highlighted: false,
+      highlightKind: null,
       visible: pNode.visible && cNode.visible,
     };
   });

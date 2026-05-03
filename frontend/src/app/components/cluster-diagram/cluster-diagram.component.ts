@@ -38,6 +38,8 @@ export class ClusterDiagramComponent implements OnChanges, AfterViewInit, OnDest
   activeChunkIndex = 0;
 
   hoverNode: RenderedNode | null = null;
+  hoverEdge: RenderedEdge | null = null;
+  hoverChunkIndex: number | null = null;
   tooltipPosition = { x: 0, y: 0 };
 
   readonly idPrefix = `cluster-${++nextClusterDiagramInstance}`;
@@ -129,11 +131,13 @@ export class ClusterDiagramComponent implements OnChanges, AfterViewInit, OnDest
     node.hovered = true;
     for (const edge of this.edges) {
       if (edge.parentIndex === node.index) {
-        this.nodes[edge.childIndex].related = true;
+        this.nodes[edge.childIndex].relation = 'descendant';
         edge.highlighted = true;
+        edge.highlightKind = 'descendant';
       } else if (edge.childIndex === node.index) {
-        this.nodes[edge.parentIndex].related = true;
+        this.nodes[edge.parentIndex].relation = 'ancestor';
         edge.highlighted = true;
+        edge.highlightKind = 'ancestor';
       }
     }
     this.updateTooltipPosition(event);
@@ -153,20 +157,59 @@ export class ClusterDiagramComponent implements OnChanges, AfterViewInit, OnDest
     this.cd.markForCheck();
   }
 
-  onEdgeEnter(edgeIndex: number): void {
+  onEdgeEnter(edgeIndex: number, event: MouseEvent): void {
     if (this.preview) { return; }
     this.clearHighlights();
     const edge = this.edges[edgeIndex];
     edge.highlighted = true;
-    this.nodes[edge.parentIndex].related = true;
-    this.nodes[edge.childIndex].related = true;
+    edge.highlightKind = 'direct';
+    this.nodes[edge.parentIndex].relation = 'ancestor';
+    this.nodes[edge.childIndex].relation = 'descendant';
+    this.hoverEdge = edge;
+    this.updateTooltipPosition(event);
+    this.cd.markForCheck();
+  }
+
+  onEdgeMove(event: MouseEvent): void {
+    if (this.preview) { return; }
+    this.updateTooltipPosition(event);
     this.cd.markForCheck();
   }
 
   onEdgeLeave(): void {
     if (this.preview) { return; }
+    this.hoverEdge = null;
     this.clearHighlights();
     this.cd.markForCheck();
+  }
+
+  onChunkEnter(chunkIndex: number): void {
+    if (this.preview) { return; }
+    this.hoverChunkIndex = chunkIndex;
+    this.applyEffectiveChunk();
+    this.cd.markForCheck();
+  }
+
+  onChunkLeave(): void {
+    if (this.preview) { return; }
+    this.hoverChunkIndex = null;
+    this.applyEffectiveChunk();
+    this.cd.markForCheck();
+  }
+
+  get effectiveActiveChunk(): number {
+    return this.hoverChunkIndex ?? this.activeChunkIndex;
+  }
+
+  private applyEffectiveChunk(): void {
+    const effective = this.effectiveActiveChunk;
+    for (const node of this.nodes) {
+      node.inactive = node.chunkIndex !== effective;
+    }
+    for (const edge of this.edges) {
+      edge.parentInactive = this.nodes[edge.parentIndex].chunkIndex !== effective;
+      edge.childInactive = this.nodes[edge.childIndex].chunkIndex !== effective;
+    }
   }
 
   onNodeClick(node: RenderedNode): void {
@@ -179,40 +222,31 @@ export class ClusterDiagramComponent implements OnChanges, AfterViewInit, OnDest
   private clearHighlights(): void {
     for (const node of this.nodes) {
       node.hovered = false;
-      node.related = false;
+      node.relation = null;
     }
     for (const edge of this.edges) {
       edge.highlighted = false;
+      edge.highlightKind = null;
     }
   }
 
   private updateTooltipPosition(event: MouseEvent): void {
     if (!this.graphContainer) { return; }
+    if (!this.hoverNode && !this.hoverEdge) { return; }
     const container = this.graphContainer.nativeElement;
     const rect = container.getBoundingClientRect();
-    let x = event.clientX - rect.left + container.scrollLeft + 15;
-    let y = event.clientY - rect.top + container.scrollTop + 15;
-
+    const pointerX = event.clientX - rect.left;
+    const pad = 0;
+    let tipW = 0;
     if (this.tooltipElement) {
-      const tipRect = this.tooltipElement.nativeElement.getBoundingClientRect();
-      const visibleLeft = container.scrollLeft;
-      const visibleRight = visibleLeft + rect.width;
-      const visibleTop = container.scrollTop;
-      const visibleBottom = visibleTop + rect.height;
-
-      if (x + tipRect.width > visibleRight) {
-        x = Math.max(visibleLeft, visibleRight - tipRect.width - 10);
-      }
-      if (x < visibleLeft) {
-        x = visibleLeft;
-      }
-      if (y + tipRect.height > visibleBottom) {
-        y = y - tipRect.height - 30;
-      }
-      if (y < visibleTop) {
-        y = visibleTop;
-      }
+      tipW = this.tooltipElement.nativeElement.getBoundingClientRect().width;
     }
+
+    const visibleW = rect.width;
+
+    const onLeftHalf = pointerX < visibleW / 2;
+    const x = onLeftHalf ? visibleW - tipW - pad : pad;
+    const y = pad;
 
     this.tooltipPosition = { x, y };
   }
