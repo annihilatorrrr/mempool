@@ -15,6 +15,10 @@
     overflow: hidden;
     pointer-events: none;
     border-radius: 4px;
+    background-color: var(--cluster-preview-background, var(--stat-box-bg));
+    box-shadow: var(--cluster-preview-shadow, none);
+    cursor: var(--cluster-preview-cursor, default);
+    transition: box-shadow 150ms ease, background-color 150ms ease;
 
     svg {
       display: block;

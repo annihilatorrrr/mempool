@@ -185,9 +185,55 @@
   align-items: center;
   overflow: visible;
   margin: -0.75rem -0.75rem -0.75rem 0;
+  cursor: pointer;
 
-  app-cluster-diagram {
+  .cluster-preview-diagram {
     display: block;
     width: 100%;
+    --cluster-preview-cursor: pointer;
+  }
+
+  .cluster-preview-expand {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    color: var(--info);
+    font-size: 0.85em;
+    opacity: 0;
+    transition: opacity 150ms ease;
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  &:focus-visible { outline: none; }
+
+  &:hover .cluster-preview-expand,
+  &:focus-visible .cluster-preview-expand {
+    opacity: 1;
+  }
+
+  &:hover .cluster-preview-diagram,
+  &:focus-visible .cluster-preview-diagram {
+    --cluster-preview-background: color-mix(in srgb, var(--info) 8%, var(--stat-box-bg));
+    --cluster-preview-shadow: 0 0 0 1px var(--info), 0 0 8px color-mix(in srgb, var(--info) 35%, transparent);
+  }
+}
+
+::ng-deep .cluster-preview-ngb-tooltip .tooltip-inner {
+  text-align: left;
+  max-width: 320px;
+  padding: 10px 12px;
+
+  p {
+    margin: 0 0 6px;
+    line-height: 1.35;
+
+    &:last-child { margin-bottom: 0; }
+
+    &.hint {
+      margin-top: 8px;
+      opacity: 0.8;
+      font-style: italic;
+    }
   }
 }

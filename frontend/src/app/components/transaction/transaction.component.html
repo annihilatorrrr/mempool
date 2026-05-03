@@ -68,6 +68,7 @@
       [hasEffectiveFeeRate]="hasEffectiveFeeRate"
       [cpfpInfo]="cpfpInfo"
       [hasCpfp]="hasCpfp"
+      [cpfpMode]="cpfpMode"
       [accelerationInfo]="accelerationInfo"
       [replaced]="replaced"
       [isCached]="isCached"
@@ -81,13 +82,14 @@
 
     <!-- CPFP Details -->
     <ng-container *ngIf="cpfpMode && hasCpfp">
+      <span id="cluster" #cluster class="anchor"></span>
       <br>
-      <div class="subtitle-block">
-        <div class="title">
-          <h2 *ngIf="cpfpInfo?.cluster" i18n="transaction.cluster|Cluster">Cluster</h2>
-          <h2 *ngIf="!cpfpInfo?.cluster" i18n="transaction.related-transactions|CPFP List">Related Transactions</h2>
-        </div>
+      <div class="title float-start">
+        <h2 *ngIf="cpfpInfo?.cluster" i18n="transaction.cluster|Cluster">Cluster</h2>
+        <h2 *ngIf="!cpfpInfo?.cluster" i18n="transaction.related-transactions|CPFP List">Related Transactions</h2>
       </div>
+      <button type="button" class="btn btn-outline-info btn-sm float-end" (click)="toggleCpfp()" i18n="hide">Hide</button>
+      <div class="clearfix"></div>
       <ng-container *ngIf="cpfpInfo?.cluster; else legacyCpfp">
         <div class="box">
           <app-cluster-diagram
