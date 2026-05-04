@@ -237,12 +237,14 @@ export class ClusterDiagramComponent implements OnChanges, AfterViewInit, OnDest
     const rect = container.getBoundingClientRect();
     const pointerX = event.clientX - rect.left;
     const pad = 0;
-    let tipW = 0;
-    if (this.tooltipElement) {
-      tipW = this.tooltipElement.nativeElement.getBoundingClientRect().width;
-    }
-
     const visibleW = rect.width;
+    let tipW = Math.min(360, visibleW);
+    if (this.tooltipElement) {
+      const measuredW = this.tooltipElement.nativeElement.getBoundingClientRect().width;
+      if (measuredW > 0) {
+        tipW = Math.min(measuredW, visibleW);
+      }
+    }
 
     const onLeftHalf = pointerX < visibleW / 2;
     const x = onLeftHalf ? visibleW - tipW - pad : pad;

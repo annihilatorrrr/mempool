@@ -1133,7 +1133,7 @@ export class TransactionComponent implements OnInit, AfterViewInit, OnDestroy {
         relativeTo: this.route,
         queryParams: { cpfp: this.cpfpMode ? 'true' : null },
         queryParamsHandling: 'merge',
-        fragment: this.cpfpMode ? 'cluster' : undefined,
+        fragment: this.getCpfpFragment(),
         replaceUrl: true,
       });
     } else {
@@ -1149,6 +1149,20 @@ export class TransactionComponent implements OnInit, AfterViewInit, OnDestroy {
 
   private isCpfpParamEnabled(cpfpParam: string | undefined): boolean {
     return cpfpParam === 'true' || cpfpParam === 'advanced' || cpfpParam === 'simple';
+  }
+
+  private getCpfpFragment(): string | null {
+    const currentParams = new URLSearchParams(this.fragmentParams?.toString() || this.route.snapshot.fragment || '');
+    const fragmentParams = new URLSearchParams();
+    if (this.cpfpMode) {
+      fragmentParams.set('cluster', '');
+    }
+    for (const [key, value] of currentParams.entries()) {
+      if (key !== 'cluster') {
+        fragmentParams.set(key, value);
+      }
+    }
+    return fragmentParams.toString() || null;
   }
 
   toggleGraph() {

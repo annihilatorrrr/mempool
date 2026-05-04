@@ -258,8 +258,16 @@
           <fa-icon class="cluster-preview-expand" [icon]="['fas', cpfpMode ? 'compress' : 'expand']" [fixedWidth]="true"></fa-icon>
         </div>
         <ng-template #clusterPreviewTooltip>
-          <p i18n="cluster.preview.chunk-line">This transaction belongs to a chunk of {{ clusterPreviewStats.chunkSize }} transaction{{ clusterPreviewStats.chunkSize === 1 ? '' : 's' }}, with combined effective fee rate <strong>{{ clusterPreviewStats.chunkFeerate | feeRounding }} sat/vB</strong>.</p>
-          <p *ngIf="clusterPreviewStats.otherChunks > 0" i18n="cluster.preview.cluster-line">In a mempool cluster containing {{ clusterPreviewStats.otherChunks }} other chunk{{ clusterPreviewStats.otherChunks === 1 ? '' : 's' }}.</p>
+          @if (clusterPreviewStats.chunkSize === 1) {
+            <p i18n="cluster.preview.chunk-line-one">This transaction belongs to a chunk of 1 transaction, with combined effective fee rate <strong>{{ clusterPreviewStats.chunkFeerate | feeRounding }} sat/vB</strong>.</p>
+          } @else {
+            <p i18n="cluster.preview.chunk-line-many">This transaction belongs to a chunk of {{ clusterPreviewStats.chunkSize }} transactions, with combined effective fee rate <strong>{{ clusterPreviewStats.chunkFeerate | feeRounding }} sat/vB</strong>.</p>
+          }
+          @if (clusterPreviewStats.otherChunks === 1) {
+            <p i18n="cluster.preview.cluster-line-one">In a mempool cluster containing 1 other chunk.</p>
+          } @else if (clusterPreviewStats.otherChunks > 1) {
+            <p i18n="cluster.preview.cluster-line-many">In a mempool cluster containing {{ clusterPreviewStats.otherChunks }} other chunks.</p>
+          }
           <p class="hint" i18n="cluster.preview.click-hint">Click for more details.</p>
         </ng-template>
       </ng-template>
