@@ -245,6 +245,24 @@
 <ng-template #effectiveRateRow>
   @if (!isLoadingTx) {
     @if ((cpfpInfo && hasEffectiveFeeRate) || (accelerationInfo && isAcceleration)) {
+      <ng-template #clusterPreviewButton let-cluster="cluster" let-txid="txid">
+        <div class="cluster-preview-inline" role="button" tabindex="0"
+          [ngbTooltip]="clusterPreviewTooltip"
+          placement="bottom"
+          tooltipClass="cluster-preview-ngb-tooltip"
+          container="body"
+          (click)="toggleCpfp()"
+          (keydown.enter)="toggleCpfp()"
+          (keydown.space)="toggleCpfp(); $event.preventDefault()">
+          <app-cluster-diagram class="cluster-preview-diagram" [cluster]="cluster" [txid]="txid" [preview]="true"></app-cluster-diagram>
+          <fa-icon class="cluster-preview-expand" [icon]="['fas', cpfpMode ? 'compress' : 'expand']" [fixedWidth]="true"></fa-icon>
+        </div>
+        <ng-template #clusterPreviewTooltip>
+          <p i18n="cluster.preview.chunk-line">This transaction belongs to a chunk of {{ clusterPreviewStats.chunkSize }} transaction{{ clusterPreviewStats.chunkSize === 1 ? '' : 's' }}, with combined effective fee rate <strong>{{ clusterPreviewStats.chunkFeerate | feeRounding }} sat/vB</strong>.</p>
+          <p *ngIf="clusterPreviewStats.otherChunks > 0" i18n="cluster.preview.cluster-line">In a mempool cluster containing {{ clusterPreviewStats.otherChunks }} other chunk{{ clusterPreviewStats.otherChunks === 1 ? '' : 's' }}.</p>
+          <p class="hint" i18n="cluster.preview.click-hint">Click for more details.</p>
+        </ng-template>
+      </ng-template>
       <tr>
         @if (isAcceleration) {
           <td i18n="transaction.accelerated-fee-rate|Accelerated transaction fee rate">Accelerated fee rate</td>
@@ -252,7 +270,7 @@
           <td i18n="transaction.effective-fee-rate|Effective transaction fee rate">Effective fee rate</td>
         }
         <td>
-          <div class="effective-fee-row">
+          <div class="effective-fee-row" [class.has-cluster-preview]="cpfpInfo?.cluster && tx?.txid">
             <div class="effective-fee-container">
               @if (accelerationInfo?.acceleratedFeeRate && (!tx.effectiveFeePerVsize || accelerationInfo.acceleratedFeeRate >= tx.effectiveFeePerVsize || tx.acceleration)) {
                 <app-fee-rate [class.oobFees]="isAcceleration" [fee]="accelerationInfo.acceleratedFeeRate"></app-fee-rate>
@@ -265,28 +283,20 @@
               }
             </div>
             @if (cpfpInfo?.cluster && tx?.txid) {
-              <div class="cluster-preview-inline" role="button" tabindex="0"
-                [ngbTooltip]="clusterPreviewTooltip"
-                placement="bottom"
-                tooltipClass="cluster-preview-ngb-tooltip"
-                container="body"
-                (click)="toggleCpfp()"
-                (keydown.enter)="toggleCpfp()"
-                (keydown.space)="toggleCpfp(); $event.preventDefault()">
-                <app-cluster-diagram class="cluster-preview-diagram" [cluster]="cpfpInfo.cluster" [txid]="tx.txid" [preview]="true"></app-cluster-diagram>
-                <fa-icon class="cluster-preview-expand" [icon]="['fas', cpfpMode ? 'compress' : 'expand']" [fixedWidth]="true"></fa-icon>
-              </div>
-              <ng-template #clusterPreviewTooltip>
-                <p i18n="cluster.preview.chunk-line">This transaction belongs to a chunk of {{ clusterPreviewStats.chunkSize }} transaction{{ clusterPreviewStats.chunkSize === 1 ? '' : 's' }}, with combined effective fee rate <strong>{{ clusterPreviewStats.chunkFeerate | feeRounding }} sat/vB</strong>.</p>
-                <p *ngIf="clusterPreviewStats.otherChunks > 0" i18n="cluster.preview.cluster-line">In a mempool cluster containing {{ clusterPreviewStats.otherChunks }} other chunk{{ clusterPreviewStats.otherChunks === 1 ? '' : 's' }}.</p>
-                <p class="hint" i18n="cluster.preview.click-hint">Click for more details.</p>
-              </ng-template>
+              <ng-container *ngTemplateOutlet="clusterPreviewButton; context: { cluster: cpfpInfo.cluster, txid: tx.txid }"></ng-container>
             } @else if (hasCpfp) {
-              <button type="button" class="btn btn-outline-info btn-sm btn-small-height" (click)="toggleCpfp()">CPFP</button>
+              <button type="button" class="btn btn-outline-info btn-sm btn-small-height float-end" (click)="toggleCpfp()">CPFP</button>
             }
           </div>
         </td>
       </tr>
+      @if (cpfpInfo?.cluster && tx?.txid) {
+        <tr class="cluster-preview-table-row">
+          <td colspan="2">
+            <ng-container *ngTemplateOutlet="clusterPreviewButton; context: { cluster: cpfpInfo.cluster, txid: tx.txid }"></ng-container>
+          </td>
+        </tr>
+      }
     }
   } @else {
     <ng-container *ngTemplateOutlet="skeletonDetailsRow"></ng-container>
