@@ -270,7 +270,7 @@
           <td i18n="transaction.effective-fee-rate|Effective transaction fee rate">Effective fee rate</td>
         }
         <td>
-          <div class="effective-fee-row" [class.has-cluster-preview]="cpfpInfo?.cluster && tx?.txid">
+          <div class="effective-fee-row" [class.has-cluster-preview]="cpfpInfo?.cluster && tx?.txid && !isAcceleration">
             <div class="effective-fee-container">
               @if (accelerationInfo?.acceleratedFeeRate && (!tx.effectiveFeePerVsize || accelerationInfo.acceleratedFeeRate >= tx.effectiveFeePerVsize || tx.acceleration)) {
                 <app-fee-rate [class.oobFees]="isAcceleration" [fee]="accelerationInfo.acceleratedFeeRate"></app-fee-rate>
@@ -282,7 +282,7 @@
                 <app-tx-fee-rating class="ms-2 me-2 effective-fee-rating" [tx]="tx"></app-tx-fee-rating>
               }
             </div>
-            @if (cpfpInfo?.cluster && tx?.txid) {
+            @if (cpfpInfo?.cluster && tx?.txid && !isAcceleration) {
               <ng-container *ngTemplateOutlet="clusterPreviewButton; context: { cluster: cpfpInfo.cluster, txid: tx.txid }"></ng-container>
             } @else if (hasCpfp) {
               <button type="button" class="btn btn-outline-info btn-sm btn-small-height float-end" (click)="toggleCpfp()">CPFP</button>
@@ -290,7 +290,7 @@
           </div>
         </td>
       </tr>
-      @if (cpfpInfo?.cluster && tx?.txid) {
+      @if (cpfpInfo?.cluster && tx?.txid && !isAcceleration) {
         <tr class="cluster-preview-table-row">
           <td colspan="2">
             <ng-container *ngTemplateOutlet="clusterPreviewButton; context: { cluster: cpfpInfo.cluster, txid: tx.txid }"></ng-container>
