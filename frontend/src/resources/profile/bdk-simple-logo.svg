@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="280px" height="103px" viewBox="0 0 200 103" version="1.1" xmlns="http://www.w3.org/2000/svg">
+  <title>BDK Simple Logo + Foundation</title>
+
+  <defs>
+    <style type="text/css"><![CDATA[
+      .bdk-fill { fill: #F7931A; }
+      .bdk-text { fill: #F7931A; font-family: "Helvetica Neue", Arial, sans-serif; font-weight: 700; font-size:44px; }
+      .bdk-sub  { fill: #F7931A; font-family: "Helvetica Neue", Arial, sans-serif; font-weight: 400; font-size:22px; letter-spacing:0.5px; }
+    ]]></style>
+  </defs>
+
+  <!-- ORIGINAL MARK: exact elements preserved with no scaling or translation -->
+  <g id="original-mark">
+    <g id="Page-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+      <g id="BDK-Simple-Logo" fill="#F7931A">
+        <polygon id="Shape" points="32.6 30.3528 32.6 0.1328 2.38 0.1328"></polygon>
+        <polygon id="Shape" points="0.4004 32.3352 0.4004 2.1152 30.6204 32.3352"></polygon>
+        <polygon id="Shape" points="67.6 100.3528 67.6 35.1328 2.38 35.1328"></polygon>
+        <polygon id="Shape" points="0.4004 37.1152 0.4004 102.3352 65.6204 102.3352"></polygon>
+      </g>
+    </g>
+  </g>
+
+  <!-- ADDED TEXT: positioned to the right of the original mark -->
+  <!-- Original mark occupies approx x=0–68; text starts at x=90 and ends near 280 boundary -->
+  <g id="bdk-text-group" transform="translate(90,0)">
+    <text class="bdk-text" x="0" y="48">BDK</text>
+    <text class="bdk-sub"  x="0" y="80">Foundation</text>
+  </g>
+</svg>
